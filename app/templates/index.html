@@ -76,6 +76,17 @@
                         <div class="form-text">Rent data integration coming soon.</div>
                     </div>
 
+                    <h4 class="mt-4">Search Area</h4>
+
+                    <div class="mb-3">
+                        <label for="radius" class="form-label slider-label">Radius: <span
+                                id="radius_value">3000</span>m</label>
+                        <input type="range" class="form-range" id="radius" name="radius" min="500" max="10000"
+                            step="500" value="3000"
+                            oninput="document.getElementById('radius_value').textContent = this.value">
+                        <div class="form-text">Search radius around city center (500m - 10km)</div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary w-100">Generate Heatmap</button>
                 </form>
             </div>

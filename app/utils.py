@@ -72,7 +72,7 @@ def fetch_amenities(lat, lon, dist=2000, tags=None):
         print(f"Error fetching OSM data: {e}")
         return []
 
-def generate_map_html(location, weights):
+def generate_map_html(location, weights, radius=3000):
     """Generate Folium map HTML with weighted heatmaps."""
     lat, lon = location
     m = folium.Map(location=[lat, lon], zoom_start=13)
@@ -81,46 +81,108 @@ def generate_map_html(location, weights):
     feature_tags = {
         "supermarket": {"shop": "supermarket"},
         "bakery": {"shop": "bakery"},
-        "metro": {"station": "subway"}, # OSM tag for metro stations often station=subway or railway=subway
+        "metro": {"railway": "subway"},
         "bus_stop": {"highway": "bus_stop"},
         "tram_stop": {"railway": "tram_stop"},
     }
     
-    # Adjust metro tags for better coverage (e.g., railway=station + station=subway)
-    # For simplicity, we'll use a broader query or specific ones.
-    # Let's refine tags:
-    feature_tags["metro"] = {"railway": "subway"} 
-
-    layers = []
+    # Calculate bounding box (OSM uses square/bbox, not circle)
+    # Approximate: 1 degree lat/lon ≈ 111km
+    lat_offset = radius / 111000  # degrees
+    lon_offset = radius / (111000 * np.cos(np.radians(lat)))  # degrees, adjusted for latitude
     
-    # Fetch and create layers
+    # Create grid for heatmap calculation
+    grid_size = 50  # 50x50 grid
+    lat_grid = np.linspace(lat - lat_offset, lat + lat_offset, grid_size)
+    lon_grid = np.linspace(lon - lon_offset, lon + lon_offset, grid_size)
+    
+    # Store individual feature heatmaps
+    feature_heatmaps = {}
+    total_weight = sum(w for f, w in weights.items() if w > 0 and f != "rent")
+    
+    if total_weight == 0:
+        # No features selected
+        folium.Marker([lat, lon], popup="City Center", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
+        return m._repr_html_()
+    
+    # Fetch and create density maps for each feature
     for feature, weight in weights.items():
-        if weight == 0:
-            continue
-            
-        if feature == "rent":
-            # Placeholder for rent layer
+        if weight == 0 or feature == "rent":
             continue
             
         tags = feature_tags.get(feature)
         if tags:
-            points = fetch_amenities(lat, lon, dist=3000, tags=tags)
-            if points:
-                # Add a HeatMap layer for this feature
-                # We weight the intensity by the user's preference
-                # Note: Folium HeatMap takes (lat, lon, weight). 
-                # We can scale the 'weight' of each point by the user's preference.
-                weighted_points = [[p[0], p[1], weight/10.0] for p in points]
+            points = fetch_amenities(lat, lon, dist=radius, tags=tags)
+            if points and len(points) > 0:
+                # Create density grid for this feature
+                points_array = np.array(points)
+                lats = points_array[:, 0]
+                lons = points_array[:, 1]
                 
-                # We can add individual heatmaps or one combined one.
-                # User asked for "IoU" / "Optimal location". 
-                # A combined heatmap summing up scores is best.
-                layers.extend(weighted_points)
-
-    if layers:
-        HeatMap(layers, radius=15, blur=20).add_to(m)
+                # Create 2D histogram (density map)
+                density, _, _ = np.histogram2d(
+                    lats, lons,
+                    bins=[lat_grid, lon_grid]
+                )
+                
+                # Normalize density
+                if density.max() > 0:
+                    density = density / density.max()
+                
+                feature_heatmaps[feature] = density
+    
+    if not feature_heatmaps:
+        # No data found
+        folium.Marker([lat, lon], popup="City Center (No data found)", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
+    else:
+        # Combine heatmaps using weighted average: (w1*h1 + w2*h2 + ...) / (w1+w2+...)
+        combined_heatmap = np.zeros((grid_size-1, grid_size-1))
+        for feature, density in feature_heatmaps.items():
+            weight = weights[feature]
+            combined_heatmap += density * weight
+        
+        combined_heatmap /= total_weight
+        
+        # Convert grid back to points for HeatMap visualization
+        heatmap_points = []
+        for i in range(grid_size - 1):
+            for j in range(grid_size - 1):
+                if combined_heatmap[i, j] > 0.01:  # Only include points with significant density
+                    lat_center = (lat_grid[i] + lat_grid[i+1]) / 2
+                    lon_center = (lon_grid[j] + lon_grid[j+1]) / 2
+                    intensity = combined_heatmap[i, j]
+                    heatmap_points.append([lat_center, lon_center, intensity])
+        
+        if heatmap_points:
+            HeatMap(
+                heatmap_points, 
+                radius=15, 
+                blur=20,
+                gradient={
+                    0.0: 'blue',
+                    0.3: 'cyan',
+                    0.5: 'lime',
+                    0.7: 'yellow',
+                    1.0: 'red'
+                }
+            ).add_to(m)
 
     # Add a marker for the center
-    folium.Marker([lat, lon], popup="City Center").add_to(m)
+    folium.Marker([lat, lon], popup="City Center", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
+    
+    # Add a RECTANGLE showing the search area (not circle, since OSM uses bounding box)
+    bounds = [
+        [lat - lat_offset, lon - lon_offset],  # Southwest corner
+        [lat + lat_offset, lon + lon_offset]   # Northeast corner
+    ]
+    
+    folium.Rectangle(
+        bounds=bounds,
+        color='blue',
+        fill=False,
+        weight=2,
+        opacity=0.5,
+        popup=f'Search area: {radius}m bounding box'
+    ).add_to(m)
 
     return m._repr_html_()

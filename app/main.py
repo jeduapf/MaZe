@@ -30,7 +30,8 @@ async def generate_map(
     metro_weight: int = Form(5),
     bus_weight: int = Form(5),
     tram_weight: int = Form(5),
-    rent_weight: int = Form(5)
+    rent_weight: int = Form(5),
+    radius: int = Form(3000)
 ):
     # Get coordinates
     location = get_city_coordinates(city)
@@ -48,6 +49,6 @@ async def generate_map(
     }
 
     # Generate map
-    map_html = generate_map_html(location, weights)
+    map_html = generate_map_html(location, weights, radius)
     
     return templates.TemplateResponse("index.html", {"request": request, "map_html": map_html, "city": city})
