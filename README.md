@@ -8,4 +8,4 @@ The user can adjust the importance of various features (supermarket, bakery, met
 - **Backend**: FastAPI
 - **Visualization**: Folium
 - **Containerization**: Docker
-- **Data**: OpenStreetMap (for amenities), and other sources for real estate data (TBD).
+- **Data**: OpenStreetMap 

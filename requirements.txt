@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+folium
+osmnx
+pandas
+geopy
+jinja2
+python-multipart
+scipy
+networkx
+shapely
