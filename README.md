@@ -1,0 +1,3 @@
+# MaZe
+
+My repository.
