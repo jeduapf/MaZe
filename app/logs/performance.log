@@ -1,0 +1,30 @@
+2025-12-05 12:21:26,971 - INFO - log_timing - ▶️  Starting: Geocoding addresses (parallel + cached)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:21:27,176 - INFO - log_timing - ✅ Geocoding addresses (parallel + cached) took 203.77ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:21:27,176 - INFO - log_timing - ▶️  Starting: Fetching OSM amenities (BATCH)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:21:27,623 - INFO - log_timing - ⏱️  fetch_all_amenities_batch took 446.29ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:21:27,625 - INFO - log_timing - ✅ Fetching OSM amenities (BATCH) took 448.11ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:21:27,625 - INFO - log_timing - ▶️  Starting: Generating heatmap layers
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:06,797 - INFO - log_timing - ▶️  [WS] Starting geocoding...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:07,149 - INFO - log_timing - ✅ [WS] Geocoding complete: 1 points
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:07,150 - INFO - log_timing - ▶️  [WS] Fetching amenities...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:08,719 - INFO - log_timing - ⏱️  fetch_all_amenities_batch took 1564.46ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:08,721 - INFO - log_timing - ✅ [WS] Fetched amenities
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:08,723 - INFO - log_timing - ▶️  [WS] Generating heatmap...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:35:08,729 - INFO - log_timing - 🎯 Auto-calculated resolution: 4096x4096 pixels (zoom level 18)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:39:15,104 - INFO - log_timing - ⏱️  build took 246378.13ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:39:16,670 - INFO - log_timing - ✅ [WS] Heatmap generation complete!
+C:\Users\jedua\Documents\MaZe\app\logger.py:49

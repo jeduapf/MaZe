@@ -1,188 +1,151 @@
-import folium
-from folium.plugins import HeatMap
 import osmnx as ox
+from .logger import timeit
 from geopy.geocoders import Nominatim
-import numpy as np
+from geopy.distance import geodesic
+from typing import Dict, List, Tuple, Optional
 
 # Initialize geolocator
 geolocator = Nominatim(user_agent="maze_app")
 
-def get_city_coordinates(city_name):
-    """Geocode a city name to (lat, lon) with timeout."""
-    try:
-        location = geolocator.geocode(city_name, timeout=5)
-        if location:
-            return (location.latitude, location.longitude)
-    except Exception as e:
-        print(f"Error geocoding {city_name}: {e}")
-    return None
+# Global constants
+MAX_DISTANCE_KM = 5.0  # Maximum distance for user points and amenity search
+WALKING_SPEED_MPM = 83  # meters per minute (~5 km/h)
 
-def search_cities(query):
-    """Search for cities matching the query string."""
-    try:
-        # Use Nominatim search with city/town filter
-        from geopy.geocoders import Nominatim
-        geolocator = Nominatim(user_agent="maze_app")
-        results = geolocator.geocode(query, exactly_one=False, limit=10, timeout=5, addressdetails=True)
-        if results:
-            cities = []
-            for result in results:
-                # Get the display name and extract city name
-                display_name = result.address
-                
-                # Try to get a short name
-                if result.raw.get('address'):
-                    addr = result.raw['address']
-                    city_name = addr.get('city') or addr.get('town') or addr.get('village') or addr.get('county') or addr.get('state') or display_name.split(',')[0]
-                else:
-                    city_name = display_name.split(',')[0]
-                
-                cities.append({"name": city_name, "display": display_name})
-            return cities[:10]
-    except Exception as e:
-        print(f"Error searching cities: {e}")
-    return []
+# OSM Tags for each feature type
+FEATURE_TAGS = {
+    "supermarket": {"shop": "supermarket"},
+    "bakery": {"shop": "bakery"},
+    "metro": {"railway": ["station", "subway_entrance"], "station": "subway"},
+    "bus_stop": {"highway": "bus_stop"},
+    "tram_stop": {"railway": "tram_stop"}
+}
 
-def get_rent_data(city_name):
-    """Placeholder for rent data fetching."""
-    # Future implementation: Fetch or load rent data
-    print(f"Fetching rent data for {city_name} (Placeholder)")
-    return []
 
+def time_to_radius(minutes: float) -> float:
+    """Convert walking time (minutes) to radius (meters)."""
+    return minutes * WALKING_SPEED_MPM
+
+
+def radius_to_time(meters: float) -> float:
+    """Convert radius (meters) to walking time (minutes)."""
+    return meters / WALKING_SPEED_MPM
+
+@timeit
 def fetch_amenities(lat, lon, dist=2000, tags=None):
-    """Fetch POIs from OSM within a distance."""
+    """Fetch POIs from OSM within a distance (legacy single-type fetch)."""
     if not tags:
         return []
     
     try:
-        # Fetch geometries
         gdf = ox.features_from_point((lat, lon), tags, dist=dist)
         if gdf.empty:
             return []
         
-        # Extract centroids for heatmap
         points = []
         for geometry in gdf.geometry:
             if geometry.geom_type == 'Point':
                 points.append([geometry.y, geometry.x])
-            elif geometry.geom_type == 'Polygon' or geometry.geom_type == 'MultiPolygon':
+            elif geometry.geom_type in ('Polygon', 'MultiPolygon'):
                 points.append([geometry.centroid.y, geometry.centroid.x])
         return points
     except Exception as e:
         print(f"Error fetching OSM data: {e}")
         return []
 
-def generate_map_html(location, weights, radius=3000):
-    """Generate Folium map HTML with weighted heatmaps."""
-    lat, lon = location
-    m = folium.Map(location=[lat, lon], zoom_start=13)
 
-    # Define tags for each feature
-    feature_tags = {
-        "supermarket": {"shop": "supermarket"},
-        "bakery": {"shop": "bakery"},
-        "metro": {"railway": "subway"},
-        "bus_stop": {"highway": "bus_stop"},
-        "tram_stop": {"railway": "tram_stop"},
-    }
+@timeit
+def fetch_all_amenities_batch(lat: float, lon: float, dist: int, 
+                               feature_weights: Dict[str, int]) -> Dict[str, List[Tuple[float, float]]]:
+    """
+    Fetch ALL amenities in a SINGLE Overpass query using combined tags.
     
-    # Calculate bounding box (OSM uses square/bbox, not circle)
-    # Approximate: 1 degree lat/lon ≈ 111km
-    lat_offset = radius / 111000  # degrees
-    lon_offset = radius / (111000 * np.cos(np.radians(lat)))  # degrees, adjusted for latitude
+    Args:
+        lat, lon: Center coordinates
+        dist: Search radius in meters
+        feature_weights: Dict of feature_name -> weight (0 = skip)
     
-    # Create grid for heatmap calculation
-    grid_size = 50  # 50x50 grid
-    lat_grid = np.linspace(lat - lat_offset, lat + lat_offset, grid_size)
-    lon_grid = np.linspace(lon - lon_offset, lon + lon_offset, grid_size)
+    Returns:
+        Dict mapping feature_name -> list of (lat, lon) points
+    """
+    # Build combined tags for active features
+    combined_tags = {}
+    active_features = []
     
-    # Store individual feature heatmaps
-    feature_heatmaps = {}
-    total_weight = sum(w for f, w in weights.items() if w > 0 and f != "rent")
+    for feature, weight in feature_weights.items():
+        if weight > 0 and feature in FEATURE_TAGS:
+            active_features.append(feature)
+            tags = FEATURE_TAGS[feature]
+            for key, val in tags.items():
+                if key in combined_tags:
+                    # Merge values into list
+                    existing = combined_tags[key]
+                    if isinstance(existing, list):
+                        if isinstance(val, list):
+                            combined_tags[key] = existing + val
+                        else:
+                            combined_tags[key] = existing + [val]
+                    else:
+                        if isinstance(val, list):
+                            combined_tags[key] = [existing] + val
+                        else:
+                            combined_tags[key] = [existing, val]
+                else:
+                    combined_tags[key] = val
     
-    if total_weight == 0:
-        # No features selected
-        folium.Marker([lat, lon], popup="City Center", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
-        return m._repr_html_()
+    if not combined_tags:
+        return {f: [] for f in feature_weights}
     
-    # Fetch and create density maps for each feature
-    for feature, weight in weights.items():
-        if weight == 0 or feature == "rent":
+    # Single OSM query
+    try:
+        gdf = ox.features_from_point((lat, lon), combined_tags, dist=dist)
+    except Exception as e:
+        print(f"Error fetching OSM batch: {e}")
+        return {f: [] for f in feature_weights}
+    
+    if gdf.empty:
+        return {f: [] for f in feature_weights}
+    
+    # Categorize results by feature type
+    results = {f: [] for f in feature_weights}
+    
+    for idx, row in gdf.iterrows():
+        geom = row.geometry
+        if geom.geom_type == 'Point':
+            point = (geom.y, geom.x)
+        elif geom.geom_type in ('Polygon', 'MultiPolygon'):
+            point = (geom.centroid.y, geom.centroid.x)
+        else:
             continue
-            
-        tags = feature_tags.get(feature)
-        if tags:
-            points = fetch_amenities(lat, lon, dist=radius, tags=tags)
-            if points and len(points) > 0:
-                # Create density grid for this feature
-                points_array = np.array(points)
-                lats = points_array[:, 0]
-                lons = points_array[:, 1]
-                
-                # Create 2D histogram (density map)
-                density, _, _ = np.histogram2d(
-                    lats, lons,
-                    bins=[lat_grid, lon_grid]
-                )
-                
-                # Normalize density
-                if density.max() > 0:
-                    density = density / density.max()
-                
-                feature_heatmaps[feature] = density
+        
+        # Match to feature type based on tags
+        if row.get('shop') == 'supermarket':
+            results['supermarket'].append(point)
+        elif row.get('shop') == 'bakery':
+            results['bakery'].append(point)
+        elif row.get('railway') in ('station', 'subway_entrance') or row.get('station') == 'subway':
+            results['metro'].append(point)
+        elif row.get('highway') == 'bus_stop':
+            results['bus_stop'].append(point)
+        elif row.get('railway') == 'tram_stop':
+            results['tram_stop'].append(point)
     
-    if not feature_heatmaps:
-        # No data found
-        folium.Marker([lat, lon], popup="City Center (No data found)", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
-    else:
-        # Combine heatmaps using weighted average: (w1*h1 + w2*h2 + ...) / (w1+w2+...)
-        combined_heatmap = np.zeros((grid_size-1, grid_size-1))
-        for feature, density in feature_heatmaps.items():
-            weight = weights[feature]
-            combined_heatmap += density * weight
-        
-        combined_heatmap /= total_weight
-        
-        # Convert grid back to points for HeatMap visualization
-        heatmap_points = []
-        for i in range(grid_size - 1):
-            for j in range(grid_size - 1):
-                if combined_heatmap[i, j] > 0.01:  # Only include points with significant density
-                    lat_center = (lat_grid[i] + lat_grid[i+1]) / 2
-                    lon_center = (lon_grid[j] + lon_grid[j+1]) / 2
-                    intensity = combined_heatmap[i, j]
-                    heatmap_points.append([lat_center, lon_center, intensity])
-        
-        if heatmap_points:
-            HeatMap(
-                heatmap_points, 
-                radius=15, 
-                blur=20,
-                gradient={
-                    0.0: 'blue',
-                    0.3: 'cyan',
-                    0.5: 'lime',
-                    0.7: 'yellow',
-                    1.0: 'red'
-                }
-            ).add_to(m)
+    return results
 
-    # Add a marker for the center
-    folium.Marker([lat, lon], popup="City Center", icon=folium.Icon(color='darkblue', icon='info-sign')).add_to(m)
-    
-    # Add a RECTANGLE showing the search area (not circle, since OSM uses bounding box)
-    bounds = [
-        [lat - lat_offset, lon - lon_offset],  # Southwest corner
-        [lat + lat_offset, lon + lon_offset]   # Northeast corner
-    ]
-    
-    folium.Rectangle(
-        bounds=bounds,
-        color='blue',
-        fill=False,
-        weight=2,
-        opacity=0.5,
-        popup=f'Search area: {radius}m bounding box'
-    ).add_to(m)
 
-    return m._repr_html_()
+def calculate_distance_km(coord1: tuple, coord2: tuple) -> float:
+    """Calculate distance between two coordinates using geopy."""
+    return geodesic(coord1, coord2).kilometers
+
+
+def validate_points_distance(coords: list, max_km: float = MAX_DISTANCE_KM) -> tuple:
+    """Validate that all points are within maximum distance of each other."""
+    if len(coords) < 2:
+        return True, ""
+    
+    for i, c1 in enumerate(coords):
+        for j, c2 in enumerate(coords[i+1:], i+1):
+            dist = calculate_distance_km(c1, c2)
+            if dist > max_km:
+                return False, f"Points {i+1} and {j+1} are {dist:.2f}km apart (max: {max_km}km)"
+    
+    return True, ""

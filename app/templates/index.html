@@ -4,148 +4,380 @@
 <head>
     <title>MaZe City Heatmap</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        html,
         body {
-            padding: 20px;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
         }
 
-        #map-container {
-            height: 600px;
+        .container-fluid {
+            height: 100%;
+            padding: 0;
+        }
+
+        .row {
+            height: 100%;
+            margin: 0;
+        }
+
+        .sidebar {
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .map-wrapper {
+            height: 100%;
+            padding: 0 !important;
+            position: relative;
+        }
+
+        #map-container,
+        #welcome-map {
+            height: 100%;
             width: 100%;
-            border: 1px solid #ccc;
-            margin-top: 20px;
         }
 
         .slider-label {
             font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .map-alert {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        h6 {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .click-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .progress {
+            height: 8px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1 class="mb-4">MaZe: Optimal City Location Finder</h1>
-
+    <div class="container-fluid">
         <div class="row">
-            <div class="col-md-4">
-                <form action="/generate_map" method="post">
-                    <div class="mb-3">
-                        <label for="city" class="form-label">City Name</label>
-                        <input type="text" class="form-control" id="city" name="city"
-                            value="{{ city if city else 'Paris' }}" list="cityList" autocomplete="off" required>
-                        <datalist id="cityList"></datalist>
-                        <div class="form-text">Start typing to see suggestions</div>
+            <!-- Sidebar -->
+            <div class="col-md-4 col-lg-3 sidebar">
+                <h4>🗺️ MaZe Heatmap</h4>
+
+                <!-- User Points -->
+                <h6 class="mt-3">📍 Your Points</h6>
+                <small class="text-muted d-block mb-2">💡 Click on the map or type addresses</small>
+                <div class="mb-2">
+                    <label class="form-label">Reference Point*</label>
+                    <input type="text" id="point1_address" class="form-control form-control-sm"
+                        placeholder="e.g., Louvre Museum, Paris" required>
+                    <small class="text-muted">Required - center of search</small>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Point 2 (optional)</label>
+                    <input type="text" id="point2_address" class="form-control form-control-sm"
+                        placeholder="e.g., Notre-Dame, Paris">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Point 3 (optional)</label>
+                    <input type="text" id="point3_address" class="form-control form-control-sm"
+                        placeholder="e.g., Arc de Triomphe, Paris">
+                </div>
+
+                <hr>
+
+                <!-- Feature Weights -->
+                <h6>🏪 Feature Weights (1-10)</h6>
+                <div class="mb-2">
+                    <label class="slider-label">Supermarket: <b id="supermarket-val">5</b></label>
+                    <input type="range" id="supermarket_weight" class="form-range" min="1" max="10" value="5"
+                        oninput="document.getElementById('supermarket-val').textContent=this.value">
+                </div>
+                <div class="mb-2">
+                    <label class="slider-label">Bakery: <b id="bakery-val">5</b></label>
+                    <input type="range" id="bakery_weight" class="form-range" min="1" max="10" value="5"
+                        oninput="document.getElementById('bakery-val').textContent=this.value">
+                </div>
+                <div class="mb-2">
+                    <label class="slider-label">Metro: <b id="metro-val">5</b></label>
+                    <input type="range" id="metro_weight" class="form-range" min="1" max="10" value="5"
+                        oninput="document.getElementById('metro-val').textContent=this.value">
+                </div>
+                <div class="mb-2">
+                    <label class="slider-label">Bus: <b id="bus-val">5</b></label>
+                    <input type="range" id="bus_weight" class="form-range" min="1" max="10" value="5"
+                        oninput="document.getElementById('bus-val').textContent=this.value">
+                </div>
+                <div class="mb-2">
+                    <label class="slider-label">Tram: <b id="tram-val">5</b></label>
+                    <input type="range" id="tram_weight" class="form-range" min="1" max="10" value="5"
+                        oninput="document.getElementById('tram-val').textContent=this.value">
+                </div>
+
+                <hr>
+
+                <!-- Parameters -->
+                <h6>⚙️ Parameters</h6>
+                <div class="mb-2">
+                    <label class="slider-label">Search Radius: <b id="radius-val">2.0</b>km</label>
+                    <input type="range" id="radius" class="form-range" min="500" max="5000" step="500" value="2000"
+                        oninput="document.getElementById('radius-val').textContent=(this.value/1000).toFixed(1)">
+                    <small class="text-muted">How far to search for amenities</small>
+                </div>
+                <div class="mb-2">
+                    <label class="slider-label">🚶 Walking Time: <b id="feature-val">6</b> min</label>
+                    <input type="range" id="feature_time" class="form-range" min="1" max="15" step="1" value="6"
+                        oninput="document.getElementById('feature-val').textContent=this.value">
+                    <small class="text-muted">How far you'd walk to amenities</small>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progress-container" class="mb-3" style="display: none;">
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                            role="progressbar" style="width: 0%"></div>
                     </div>
+                    <small id="progress-status" class="text-muted">Starting...</small>
+                </div>
 
-                    <h4 class="mt-4">Preferences (0-10)</h4>
-
-                    <div class="mb-3">
-                        <label for="supermarket_weight" class="form-label slider-label">Supermarket</label>
-                        <input type="range" class="form-range" id="supermarket_weight" name="supermarket_weight" min="0"
-                            max="10" value="5">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="bakery_weight" class="form-label slider-label">Bakery</label>
-                        <input type="range" class="form-range" id="bakery_weight" name="bakery_weight" min="0" max="10"
-                            value="5">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="metro_weight" class="form-label slider-label">Metro Station</label>
-                        <input type="range" class="form-range" id="metro_weight" name="metro_weight" min="0" max="10"
-                            value="5">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="bus_weight" class="form-label slider-label">Bus Stop</label>
-                        <input type="range" class="form-range" id="bus_weight" name="bus_weight" min="0" max="10"
-                            value="5">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="tram_weight" class="form-label slider-label">Tram Stop</label>
-                        <input type="range" class="form-range" id="tram_weight" name="tram_weight" min="0" max="10"
-                            value="5">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="rent_weight" class="form-label slider-label">Rent Price (Placeholder)</label>
-                        <input type="range" class="form-range" id="rent_weight" name="rent_weight" min="0" max="10"
-                            value="5" disabled>
-                        <div class="form-text">Rent data integration coming soon.</div>
-                    </div>
-
-                    <h4 class="mt-4">Search Area</h4>
-
-                    <div class="mb-3">
-                        <label for="radius" class="form-label slider-label">Radius: <span
-                                id="radius_value">3000</span>m</label>
-                        <input type="range" class="form-range" id="radius" name="radius" min="500" max="10000"
-                            step="500" value="3000"
-                            oninput="document.getElementById('radius_value').textContent = this.value">
-                        <div class="form-text">Search radius around city center (500m - 10km)</div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">Generate Heatmap</button>
-                </form>
+                <button id="generate-btn" class="btn btn-primary w-100 mt-3" onclick="generateHeatmapWS()">
+                    🔥 Generate Heatmap
+                </button>
             </div>
 
-            <div class="col-md-8">
-                {% if map_html %}
-                <div id="map-container">
-                    {{ map_html | safe }}
+            <!-- Map Area -->
+            <div class="col-md-8 col-lg-9 map-wrapper">
+                <div id="map-container"></div>
+                <div class="click-hint">
+                    <small>👆 Click on the map to set points or type addresses manually</small>
                 </div>
-                {% else %}
-                <div class="alert alert-info mt-4">
-                    Enter a city and adjust preferences to generate a heatmap of optimal locations.
-                </div>
-                {% endif %}
 
-                {% if error %}
-                <div class="alert alert-danger mt-4">
-                    {{ error }}
-                </div>
-                {% endif %}
+                <!-- Alerts Overlay -->
+                <div class="map-alert" id="alert-container"></div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // City autocomplete
-        const cityInput = document.getElementById('city');
-        const cityList = document.getElementById('cityList');
-        let debounceTimer;
+        let map;
+        let markers = [];
+        let clickCount = 0;
 
-        cityInput.addEventListener('input', function () {
-            const query = this.value;
+        // Initialize map on load
+        document.addEventListener('DOMContentLoaded', function () {
+            map = L.map('map-container').setView([48.8566, 2.3522], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
 
-            // Clear previous timer
-            clearTimeout(debounceTimer);
-
-            // Debounce API calls
-            debounceTimer = setTimeout(async () => {
-                if (query.length < 2) {
-                    cityList.innerHTML = '';
+            // Handle map clicks for point selection
+            map.on('click', async function (e) {
+                if (clickCount >= 3) {
+                    showAlert('Maximum 3 points allowed.', 'warning');
                     return;
                 }
 
-                try {
-                    const response = await fetch(`/api/cities?q=${encodeURIComponent(query)}`);
-                    const cities = await response.json();
+                const lat = e.latlng.lat;
+                const lon = e.latlng.lng;
 
-                    cityList.innerHTML = '';
-                    cities.forEach(city => {
-                        const option = document.createElement('option');
-                        option.value = city.name;
-                        option.textContent = city.display;
-                        cityList.appendChild(option);
-                    });
+                const hint = document.querySelector('.click-hint small');
+                const originalText = hint.textContent;
+                hint.textContent = '⏳ Geocoding...';
+
+                try {
+                    const response = await fetch(`/reverse_geocode?lat=${lat}&lon=${lon}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const inputs = ['point1_address', 'point2_address', 'point3_address'];
+                        const colors = ['blue', 'orange', 'orange'];
+                        const labels = ['Reference Point', 'Point 2', 'Point 3'];
+
+                        for (let i = 0; i < inputs.length; i++) {
+                            const input = document.getElementById(inputs[i]);
+                            if (!input.value) {
+                                input.value = data.address;
+                                clickCount++;
+
+                                const marker = L.marker([lat, lon]).addTo(map)
+                                    .bindPopup(labels[i]).openPopup();
+                                markers.push({ marker, input });
+                                break;
+                            }
+                        }
+                    }
                 } catch (error) {
-                    console.error('Error fetching cities:', error);
+                    console.error('Error reverse geocoding:', error);
                 }
-            }, 300);
+
+                hint.textContent = originalText;
+            });
         });
+
+        function showAlert(message, type = 'danger') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        function generateHeatmapWS() {
+            const point1 = document.getElementById('point1_address').value;
+            if (!point1.trim()) {
+                showAlert('Please enter at least the Reference Point address.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('generate-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const progressStatus = document.getElementById('progress-status');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // Collect form data
+            const data = {
+                addresses: [
+                    point1,
+                    document.getElementById('point2_address').value,
+                    document.getElementById('point3_address').value
+                ],
+                weights: {
+                    supermarket: parseInt(document.getElementById('supermarket_weight').value),
+                    bakery: parseInt(document.getElementById('bakery_weight').value),
+                    metro: parseInt(document.getElementById('metro_weight').value),
+                    bus_stop: parseInt(document.getElementById('bus_weight').value),
+                    tram_stop: parseInt(document.getElementById('tram_weight').value)
+                },
+                radius: parseInt(document.getElementById('radius').value),
+                feature_time: parseInt(document.getElementById('feature_time').value)
+            };
+
+            // Connect via WebSocket
+            const ws = new WebSocket(`ws://${window.location.host}/ws/heatmap`);
+
+            ws.onopen = function () {
+                ws.send(JSON.stringify(data));
+            };
+
+            ws.onmessage = function (event) {
+                const msg = JSON.parse(event.data);
+                progressBar.style.width = msg.progress + '%';
+
+                const statusMessages = {
+                    'geocoding': '📍 Geocoding addresses...',
+                    'geocoded': '✅ Addresses found!',
+                    'fetching': '🔍 Fetching amenities from OSM...',
+                    'fetched': '✅ Amenities loaded!',
+                    'generating': '🎨 Generating heatmap...',
+                    'complete': '✅ Complete!',
+                    'error': '❌ Error: ' + (msg.data?.message || 'Unknown error')
+                };
+
+                progressStatus.textContent = statusMessages[msg.status] || msg.status;
+
+                if (msg.status === 'complete' && msg.data?.map_html) {
+                    // Replace map with generated heatmap
+                    document.getElementById('map-container').innerHTML = msg.data.map_html;
+                    document.querySelector('.click-hint').style.display = 'none';
+
+                    btn.disabled = false;
+                    btn.textContent = '🔥 Generate Heatmap';
+                    progressContainer.style.display = 'none';
+                    ws.close();
+                }
+
+                if (msg.status === 'error') {
+                    showAlert(msg.data?.message || 'An error occurred', 'danger');
+                    btn.disabled = false;
+                    btn.textContent = '🔥 Generate Heatmap';
+                    progressContainer.style.display = 'none';
+                    ws.close();
+                }
+            };
+
+            ws.onerror = function (error) {
+                showAlert('WebSocket connection failed. Using fallback...', 'warning');
+                // Fallback to regular POST
+                fallbackToPost(data);
+            };
+
+            ws.onclose = function () {
+                console.log('WebSocket closed');
+            };
+        }
+
+        function fallbackToPost(data) {
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/generate_heatmap';
+
+            const fields = {
+                'point1_address': data.addresses[0],
+                'point2_address': data.addresses[1],
+                'point3_address': data.addresses[2],
+                'supermarket_weight': data.weights.supermarket,
+                'bakery_weight': data.weights.bakery,
+                'metro_weight': data.weights.metro,
+                'bus_weight': data.weights.bus_stop,
+                'tram_weight': data.weights.tram_stop,
+                'radius': data.radius,
+                'feature_time': data.feature_time
+            };
+
+            for (const [name, value] of Object.entries(fields)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value || '';
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     </script>
 </body>
 

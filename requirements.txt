@@ -9,3 +9,7 @@ python-multipart
 scipy
 networkx
 shapely
+matplotlib
+pillow
+aiohttp
+redis
