@@ -28,3 +28,87 @@ C:\Users\jedua\Documents\MaZe\app\logger.py:49
 C:\Users\jedua\Documents\MaZe\app\logger.py:49
 2025-12-05 12:39:16,670 - INFO - log_timing - ✅ [WS] Heatmap generation complete!
 C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:48:15,941 - INFO - log_timing - ⏱️  reverse_geocode took 163.87ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:48:29,460 - INFO - log_timing - ⏱️  reverse_geocode took 141.41ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:48:41,082 - INFO - log_timing - ⏱️  reverse_geocode took 181.17ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:09,569 - INFO - log_timing - ▶️  [WS] Starting geocoding...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:09,855 - INFO - log_timing - ✅ [WS] Geocoding complete: 1 points
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:09,857 - INFO - log_timing - ▶️  [WS] Fetching amenities...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:16,107 - INFO - log_timing - ⏱️  fetch_all_amenities_batch took 6249.90ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:16,108 - INFO - log_timing - ✅ [WS] Fetched amenities
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:16,109 - INFO - log_timing - ▶️  [WS] Generating heatmap...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:16,110 - INFO - log_timing - 🎯 Auto-calculated resolution: 1381x1392 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:22,449 - INFO - log_timing - ⏱️  build took 6339.71ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:22,832 - INFO - log_timing - ✅ [WS] Heatmap generation complete!
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:49,811 - INFO - log_timing - ▶️  [WS] Starting geocoding...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:49,816 - INFO - log_timing - ✅ [WS] Geocoding complete: 1 points
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:49,816 - INFO - log_timing - ▶️  [WS] Fetching amenities...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:57,011 - INFO - log_timing - ⏱️  fetch_all_amenities_batch took 7193.89ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:57,011 - INFO - log_timing - ✅ [WS] Fetched amenities
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:57,012 - INFO - log_timing - ▶️  [WS] Generating heatmap...
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:49:57,013 - INFO - log_timing - 🎯 Auto-calculated resolution: 3089x3083 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:52:51,524 - INFO - log_timing - ⏱️  build took 174510.16ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 12:52:52,371 - INFO - log_timing - ❌ [WS] Error: sent 1012 (service restart); no close frame received
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:13:42,498 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:13:42,652 - INFO - log_timing - ❌ build failed after 155.07ms: 
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:17:12,541 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:17:14,111 - INFO - log_timing - ⏱️  build took 1570.20ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:55:41,025 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:55:42,236 - INFO - log_timing - ⏱️  build took 1210.42ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:56:04,905 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:56:06,150 - INFO - log_timing - ⏱️  build took 1242.33ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:58:00,205 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 14:58:00,205 - INFO - log_timing - ❌ build failed after 1.42ms: HeatmapLayerGenerator._process_weight_layer() takes 8 positional arguments but 9 were given
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:01:28,801 - INFO - log_timing - ❌ build failed after 0.00ms: HeatmapLayerGenerator.build() got an unexpected keyword argument 'conv'
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:01:57,279 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:01:58,434 - INFO - log_timing - ⏱️  build took 1154.64ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:02:28,225 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:02:28,874 - INFO - log_timing - ⏱️  build took 654.78ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:09:33,156 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:09:33,655 - INFO - log_timing - ⏱️  build took 497.69ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:11:53,354 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:11:53,948 - INFO - log_timing - ⏱️  build took 592.48ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:12:22,613 - INFO - log_timing - 🎯 Auto-calculated resolution: 633x502 pixels (zoom level 15)
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
+2025-12-05 15:12:23,183 - INFO - log_timing - ⏱️  build took 573.13ms
+C:\Users\jedua\Documents\MaZe\app\logger.py:49
